@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IRYS Hirys Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: radial-gradient(circle at top left, #a5f3e7, transparent),
+                  radial-gradient(circle at bottom right, #4c96b7, transparent),
+                  #0369a1;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      color: #e2e8f0;
+    }
+
+    @keyframes float {
+        0% { transform: translateY(0px) rotate(0deg); }
+        50% { transform: translateY(-10px) rotate(5deg); }
+        100% { transform: translateY(0px) rotate(0deg); }
+    }
+
+    .logo-icon {
+        position: absolute;
+        width: 60px;
+        opacity: 0.08;
+        animation: float 6s ease-in-out infinite;
+        user-select: none;
+        pointer-events: none;
+    }
+  </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4 relative overflow-hidden">
+
+  <!-- Scattered Irys logos -->
+  <img src="irys-logo.png" class="logo-icon top-[10%] left-[5%]" />
+  <img src="irys-logo.png" class="logo-icon top-[30%] left-[20%]" style="animation-delay: 2s;" />
+  <img src="irys-logo.png" class="logo-icon top-[60%] left-[80%]" style="animation-delay: 4s;" />
+  <img src="irys-logo.png" class="logo-icon top-[85%] left-[50%]" style="animation-delay: 1s;" />
+  <img src="irys-logo.png" class="logo-icon top-[20%] right-[10%]" style="animation-delay: 3s;" />
+
+  <!-- Main card -->
+  <div class="z-10 bg-gray-900 bg-opacity-30 backdrop-blur-sm p-8 rounded-2xl shadow-2xl max-w-lg w-full text-center border border-gray-700 transform transition-transform duration-300 hover:scale-[1.02]">
+    <h1 class="text-4xl font-extrabold mb-2 text-white drop-shadow-lg">
+        IRYS Hirys Tracker
+    </h1>
+    <p class="text-gray-300 text-lg mb-8">
+        See how many times you have mentioned "hirys".
+    </p>
+
+    <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
+      <input type="text" id="usernameInput" placeholder="Enter Twitter @username" class="flex-1 w-full sm:w-auto p-3 rounded-lg bg-gray-700 bg-opacity-50 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-400 transition-all duration-300">
+      <button id="searchButton" class="w-full sm:w-auto p-3 rounded-lg bg-teal-500 text-gray-900 font-bold hover:bg-teal-400 transition-colors duration-300 shadow-lg flex items-center justify-center gap-2">
+        <span id="buttonText">Search</span>
+        <div id="loadingSpinner" class="hidden h-6 w-6 border-4 border-t-4 border-gray-900 border-opacity-20 border-t-teal-500 rounded-full animate-spin"></div>
+      </button>
+    </div>
+    
+    <!-- Results -->
+    <div id="resultContainer" class="p-6 rounded-lg bg-gray-800 bg-opacity-40 border border-gray-700 min-h-[120px] flex flex-col items-center justify-center">
+      <p id="resultText" class="text-xl font-semibold text-gray-300 mb-3">
+        Awaiting your command...
+      </p>
+      <div id="breakdown" class="hidden text-gray-400 text-sm space-y-1">
+        <p id="tweetCountText"></p>
+        <p id="replyCountText"></p>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="mt-6 text-gray-400 text-sm">
+      Built with ❤️ by <span class="text-teal-400">@lae_gend</span>
+    </footer>
+  </div>
+
+  <!-- Script -->
+  <script>
+    window.onload = function() {
+      const usernameInput = document.getElementById('usernameInput');
+      const searchButton = document.getElementById('searchButton');
+      const resultText = document.getElementById('resultText');
+      const buttonText = document.getElementById('buttonText');
+      const loadingSpinner = document.getElementById('loadingSpinner');
+      const breakdown = document.getElementById('breakdown');
+      const tweetCountText = document.getElementById('tweetCountText');
+      const replyCountText = document.getElementById('replyCountText');
+
+      searchButton.addEventListener('click', async () => {
+        const username = usernameInput.value.trim();
+        if (username === '') {
+          resultText.textContent = "Please enter a Twitter username.";
+          breakdown.classList.add("hidden");
+          return;
+        }
+
+        buttonText.classList.add('hidden');
+        loadingSpinner.classList.remove('hidden');
+        resultText.textContent = "Searching for mentions...";
+        resultText.classList.remove('text-green-400', 'text-red-400');
+        breakdown.classList.add("hidden");
+
+        try {
+          const response = await fetch(`/api/count-hirys`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ username: username }),
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+
+            resultText.textContent = `@${data.username} has mentioned "hirys" ${data.totalCount} times.`;
+            resultText.classList.add('text-green-400');
+
+            // Show breakdown
+            tweetCountText.textContent = `• Tweets: ${data.tweetCount}`;
+            replyCountText.textContent = `• Replies/Comments: ${data.replyCount}`;
+            breakdown.classList.remove("hidden");
+          } else {
+            const errorData = await response.json();
+            resultText.textContent = `Error: ${errorData.error}`;
+            resultText.classList.add('text-red-400');
+            breakdown.classList.add("hidden");
+          }
+        } catch (error) {
+          console.error('Fetch error:', error);
+          resultText.textContent = 'An unexpected error occurred. Please try again later.';
+          resultText.classList.add('text-red-400');
+          breakdown.classList.add("hidden");
+        } finally {
+          buttonText.classList.remove('hidden');
+          loadingSpinner.classList.add('hidden');
+        }
+      });
+    };
+  </script>
+</body>
+</html>
