@@ -7,7 +7,7 @@ export default async function handler(req, res) {
 
   try {
     const response = await fetch(
-      `https://api.x.com/2/tweets/search/recent?query=from:${username} hirys&max_results=100`,
+      `https://api.x.com/2/tweets/search/recent?query=from:${username} @irys_xyz&max_results=1000`,
       {
         headers: {
           "Authorization": `Bearer ${process.env.TWITTER_BEARER_TOKEN}`
