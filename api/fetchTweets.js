@@ -1,5 +1,3 @@
-import fetch from "node-fetch";
-
 export default async function handler(req, res) {
   const { username } = req.query;
 
@@ -9,26 +7,24 @@ export default async function handler(req, res) {
 
   try {
     const response = await fetch(
-      `https://api.twitter.com/2/tweets/search/recent?query=from:${username} @irys_xyz&max_results=100`,
+      `https://api.x.com/2/tweets/search/recent?query=from:${username} hirys&max_results=100`,
       {
         headers: {
-          Authorization: `Bearer ${process.env.TWITTER_BEARER_TOKEN}`,
-        },
+          "Authorization": `Bearer ${process.env.TWITTER_BEARER_TOKEN}`
+        }
       }
     );
 
     const data = await response.json();
 
-    if (!data.data) {
-      return res.status(200).json({ count: 0 });
+    if (data.errors) {
+      return res.status(400).json({ error: data.errors[0].detail });
     }
 
-    // Count tweets mentioning @irys_xyz
-    const count = data.data.length;
+    const count = data.meta?.result_count || 0;
 
-    res.status(200).json({ count });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Failed to fetch tweets" });
+    return res.status(200).json({ count });
+  } catch (err) {
+    return res.status(500).json({ error: "Server error" });
   }
 }
