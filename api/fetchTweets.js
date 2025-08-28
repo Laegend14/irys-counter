@@ -8,58 +8,27 @@ export default async function handler(req, res) {
   }
 
   try {
-    const bearerToken = process.env.TWITTER_BEARER_TOKEN;
-
-    // Step 1: Get user ID from username
-    const userResp = await fetch(
-      `https://api.twitter.com/2/users/by/username/${username}`,
+    const response = await fetch(
+      `https://api.twitter.com/2/tweets/search/recent?query=from:${username} @irys_xyz&max_results=100`,
       {
-        headers: { Authorization: `Bearer ${bearerToken}` },
+        headers: {
+          Authorization: `Bearer ${process.env.TWITTER_BEARER_TOKEN}`,
+        },
       }
     );
 
-    const userData = await userResp.json();
-    if (!userResp.ok || !userData.data) {
-      return res.status(404).json({ error: "User not found" });
+    const data = await response.json();
+
+    if (!data.data) {
+      return res.status(200).json({ count: 0 });
     }
 
-    const userId = userData.data.id;
-    let count = 0;
-    let paginationToken = null;
+    // Count tweets mentioning @irys_xyz
+    const count = data.data.length;
 
-    // Step 2: Loop through tweets (with pagination)
-    do {
-      const url = new URL(
-        `https://api.twitter.com/2/users/${userId}/tweets`
-      );
-      url.searchParams.set("max_results", "100"); // fetch up to 100 per request
-      if (paginationToken) {
-        url.searchParams.set("pagination_token", paginationToken);
-      }
-
-      const tweetsResp = await fetch(url, {
-        headers: { Authorization: `Bearer ${bearerToken}` },
-      });
-
-      const tweetsData = await tweetsResp.json();
-      if (!tweetsResp.ok) {
-        return res.status(500).json({ error: tweetsData });
-      }
-
-      if (tweetsData.data) {
-        for (const tweet of tweetsData.data) {
-          if (tweet.text.toLowerCase().includes("@irys_xyz")) {
-            count++;
-          }
-        }
-      }
-
-      paginationToken = tweetsData.meta?.next_token || null;
-    } while (paginationToken);
-
-    return res.status(200).json({ count });
+    res.status(200).json({ count });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: "Failed to fetch tweets" });
   }
 }
