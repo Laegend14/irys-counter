@@ -104,13 +104,13 @@
       resultDiv.textContent = "Loading...";
 
       try {
-        const response = await fetch(`/api/fetchTweets?username=${username}`);
+        const response = await fetch(`/api/fetchTweets?username=${encodeURIComponent(username)}`);
         const data = await response.json();
 
-        if (response.ok) {
-          resultDiv.textContent = `${username} has mentioned @irys_xyz ${data.count} times.`;
+        if (response.ok && typeof data.count === "number") {
+          resultDiv.textContent = `${username} has mentioned @irys_xyz ${data.count} times (last 7 days).`;
         } else {
-          resultDiv.textContent = data.error || "Something went wrong.";
+          resultDiv.textContent = data.error || "Something went wrong. Please try again.";
         }
       } catch (error) {
         console.error(error);

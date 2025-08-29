@@ -1,51 +1,32 @@
 export default async function handler(req, res) {
-  const { username } = req.query;
+  const { username } = req.query; // we’ll get ?username=... from frontend
 
   if (!username) {
     return res.status(400).json({ error: "Username is required" });
   }
 
-  let count = 0;
-  let nextToken = null;
-  let tries = 0;
-
   try {
-    do {
-      // Build request URL
-      let url = `https://api.x.com/2/tweets/search/recent?query=from:${username} @irys_xyz&max_results=100`;
-      if (nextToken) {
-        url += `&next_token=${nextToken}`;
-      }
+    // Twitter API endpoint
+    const url = `https://api.twitter.com/2/tweets/search/recent?query=from:${username} @irys_xyz&max_results=100`;
 
-      const response = await fetch(url, {
-        headers: {
-          "Authorization": `Bearer ${process.env.TWITTER_BEARER_TOKEN}`
-        }
-      });
+    const response = await fetch(url, {
+      headers: {
+        "Authorization": `Bearer ${process.env.TWITTER_BEARER_TOKEN}`, // your secret
+      },
+    });
 
-      const data = await response.json();
+    if (!response.ok) {
+      const errorDetails = await response.text();
+      return res.status(response.status).json({ error: errorDetails });
+    }
 
-      // If X API returns error
-      if (data.errors) {
-        return res.status(400).json({ error: data.errors[0].detail });
-      }
+    const data = await response.json();
 
-      // Add to count
-      count += data.meta?.result_count || 0;
+    // Count tweets
+    const count = data.meta?.result_count || 0;
 
-      // Prepare for next page
-      nextToken = data.meta?.next_token || null;
-
-      // Prevent infinite loop (API only allows last 7 days of tweets anyway)
-      tries++;
-      if (tries > 10) break;
-
-    } while (nextToken);
-
-    return res.status(200).json({ count });
-
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: "Server error" });
+    return res.status(200).json({ username, count });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
   }
 }
