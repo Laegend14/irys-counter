@@ -9,7 +9,7 @@
       margin: 0;
       padding: 0;
       font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #006d77, #83c5be); /* ocean bluish green */
+      background: linear-gradient(135deg, #006d77, #83c5be);
       color: white;
       display: flex;
       justify-content: center;
@@ -104,11 +104,12 @@
       resultDiv.textContent = "Loading...";
 
       try {
-        const response = await fetch(`/api/fetchTweets?username=${encodeURIComponent(username)}`);
+        // 🔥 Replace this with your actual Render URL
+        const response = await fetch(`https://irys-backend.onrender.com/count?username=${encodeURIComponent(username)}`);
         const data = await response.json();
 
         if (response.ok && typeof data.count === "number") {
-          resultDiv.textContent = `${username} has mentioned @irys_xyz ${data.count} times (last 7 days).`;
+          resultDiv.textContent = `${username} has mentioned @irys_xyz ${data.count} times.`;
         } else {
           resultDiv.textContent = data.error || "Something went wrong. Please try again.";
         }
