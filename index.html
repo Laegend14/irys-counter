@@ -105,7 +105,8 @@
 
       try {
         // 🔥 Replace this with your actual Render URL
-        const response = await fetch(`https://irys-backend.onrender.com/count?username=${encodeURIComponent(username)}`);
+        const response = await fetch(`https://irys-backend.onrender.com/count?username=${username}`);
+
         const data = await response.json();
 
         if (response.ok && typeof data.count === "number") {
